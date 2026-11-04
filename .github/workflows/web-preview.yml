@@ -22,7 +22,7 @@ jobs:
         run: |
           flutter create . --platforms web --org com.fuellyo --project-name fuellyo
           rm -f test/widget_test.dart
-      - run: flutter build web --release --no-web-resources-cdn
+      - run: flutter build web --release --no-web-resources-cdn --dart-define=FUELLYO_SEMANTICS=true
       - uses: actions/setup-node@v4
         with:
           node-version: 20

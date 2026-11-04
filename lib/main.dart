@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -11,6 +12,10 @@ import 'ui/theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('pl');
+  // Tylko dla podglądu webowego w CI: drzewo semantyki pozwala automatycznie klikać po etykietach.
+  if (const bool.fromEnvironment('FUELLYO_SEMANTICS')) {
+    SemanticsBinding.instance.ensureSemantics();
+  }
   final store = GarageStore(InMemoryGarageRepository());
   await store.load();
   runApp(FuellYoApp(store: store));

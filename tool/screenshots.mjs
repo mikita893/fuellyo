@@ -17,13 +17,11 @@ async function session(colorScheme) {
   page.on('console', (m) => m.type() === 'error' && console.log('[console]', m.text()));
   await page.goto(url, { waitUntil: 'networkidle' });
   await page.waitForTimeout(4000);
-  // Włącz drzewo semantyki Fluttera, żeby klikać po etykietach.
-  await page.locator('flt-semantics-placeholder').click({ force: true }).catch(() => {});
-  await page.waitForTimeout(800);
+  // Build ma włączoną semantykę (FUELLYO_SEMANTICS), więc elementy mają role i etykiety.
   return page;
 }
 
-async function click(page, name) {
+async function click(page, name, fallback) {
   const candidates = [
     page.getByRole('tab', { name }),
     page.getByRole('button', { name }),
@@ -38,6 +36,12 @@ async function click(page, name) {
       }
     } catch (_) {}
   }
+  if (fallback) {
+    console.log(`.. ${name}: klikam w punkt ${fallback}`);
+    await page.mouse.click(fallback[0], fallback[1]);
+    await page.waitForTimeout(1200);
+    return true;
+  }
   console.log(`!! nie znaleziono: ${name}`);
   return false;
 }
@@ -49,29 +53,32 @@ async function shot(page, name) {
 
 const page = await session('light');
 await shot(page, '01-powitanie');
-await click(page, 'Zobacz na przykładowych danych');
+await click(page, 'Zobacz na przykładowych danych', [195, 607]);
 await shot(page, '02-pulpit');
+await page.mouse.move(195, 400);
 await page.mouse.wheel(0, 700);
 await page.waitForTimeout(800);
 await shot(page, '03-pulpit-dol');
-await click(page, 'Tankowania');
+await page.mouse.wheel(0, -2000);
+await page.waitForTimeout(500);
+await click(page, 'Tankowania', [146, 805]);
 await shot(page, '04-tankowania');
-await click(page, 'Serwis');
+await click(page, 'Serwis', [244, 805]);
 await shot(page, '05-serwis');
-await click(page, 'Garaż');
+await click(page, 'Garaż', [341, 805]);
 await shot(page, '06-garaz');
-await click(page, 'Tankowania');
-await click(page, 'Tankowanie');
+await click(page, 'Tankowania', [146, 805]);
+await click(page, 'Tankowanie', [310, 725]);
 await shot(page, '07-nowe-tankowanie');
 await page.keyboard.press('Escape');
 await page.waitForTimeout(800);
-await click(page, 'Serwis');
-await click(page, 'Wymiana oleju');
+await click(page, 'Serwis', [244, 805]);
+await click(page, 'Wymiana oleju', [195, 330]);
 await shot(page, '08-szczegoly-zadania');
 await page.close();
 
 const dark = await session('dark');
-await click(dark, 'Zobacz na przykładowych danych');
+await click(dark, 'Zobacz na przykładowych danych', [195, 607]);
 await shot(dark, '09-pulpit-ciemny');
 
 await browser.close();

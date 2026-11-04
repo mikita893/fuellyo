@@ -21,6 +21,7 @@ class FuelScreen extends StatelessWidget {
       backgroundColor: Colors.transparent,
       appBar: AppBar(title: const Text('Tankowania')),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: () => showFuelEntrySheet(context),
         icon: const Icon(Icons.add),
         label: const Text('Tankowanie'),

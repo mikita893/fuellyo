@@ -31,6 +31,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
       backgroundColor: Colors.transparent,
       appBar: AppBar(title: const Text('Serwis')),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: () => showAddTaskSheet(context),
         icon: const Icon(Icons.add),
         label: const Text('Zadanie'),
