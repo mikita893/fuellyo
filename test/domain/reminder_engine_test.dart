@@ -67,7 +67,8 @@ void main() {
     expect(addMonths(DateTime(2026, 1, 31), 1), DateTime(2026, 2, 28));
     expect(addMonths(DateTime(2024, 1, 31), 1), DateTime(2024, 2, 29));
     expect(addMonths(DateTime(2026, 11, 15), -11), DateTime(2025, 12, 15));
-  })
+  });
+
   test('progress to większa z części km i czasu', () {
     // km: 5000/15000 = 0.33; czas: 292/365 dni = 0.8
     final r = engine.evaluate(oil, now: now, currentOdometerKm: 105000);
