@@ -3,6 +3,7 @@ library;
 
 export 'date_utils.dart';
 export 'fuel_entry.dart';
+export 'fuel_stats.dart';
 export 'maintenance_task.dart';
 export 'mileage_estimator.dart';
 export 'refuel_predictor.dart';

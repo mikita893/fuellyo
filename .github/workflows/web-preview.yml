@@ -1,0 +1,26 @@
+name: Web preview
+
+# Buduje wersję webową do podglądu UI (zrzuty ekranu w PR). Nie jest to wersja produkcyjna.
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate web platform files
+        run: |
+          flutter create . --platforms web --org com.fuellyo --project-name fuellyo
+          rm -f test/widget_test.dart
+      - run: flutter build web --release --no-web-resources-cdn
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-preview
+          path: build/web
+          retention-days: 7

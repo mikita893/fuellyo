@@ -12,6 +12,7 @@ class MaintenanceReminder {
     this.kmLeft,
     this.daysLeft,
     this.estimatedDueDate,
+    this.progress = 0,
   });
 
   final MaintenanceTask task;
@@ -24,6 +25,9 @@ class MaintenanceReminder {
   /// Najwcześniejsza z dat: termin kalendarzowy lub dzień, w którym
   /// (przy obecnym tempie jazdy) zostanie przekroczony limit km.
   final DateTime? estimatedDueDate;
+
+  /// Jaka część interwału już minęła (0.0–1.0), większa z części km i czasu.
+  final double progress;
 }
 
 /// Liczy, które czynności serwisowe są aktualne, zbliżają się lub są przeterminowane.
@@ -63,6 +67,18 @@ class ReminderEngine {
     final overdue = (daysLeft != null && daysLeft < 0) || (kmLeft != null && kmLeft <= 0);
     final soon = (daysLeft != null && daysLeft <= soonDays) || (kmLeft != null && kmLeft <= soonKm);
 
+    var progress = 0.0;
+    if (task.intervalKm != null && task.intervalKm! > 0) {
+      progress = (currentOdometerKm - task.lastDoneOdometerKm) / task.intervalKm!;
+    }
+    if (dueDate != null) {
+      final total = daysBetween(dateOnly(task.lastDoneDate), dueDate);
+      if (total > 0) {
+        final timeProgress = daysBetween(dateOnly(task.lastDoneDate), today) / total;
+        if (timeProgress > progress) progress = timeProgress;
+      }
+    }
+
     final candidates = [dueDate, kmDueDate].whereType<DateTime>().toList()..sort();
 
     return MaintenanceReminder(
@@ -77,6 +93,7 @@ class ReminderEngine {
       kmLeft: kmLeft,
       daysLeft: daysLeft,
       estimatedDueDate: candidates.isEmpty ? null : candidates.first,
+      progress: progress.clamp(0.0, 1.0),
     );
   }
 

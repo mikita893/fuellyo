@@ -67,5 +67,16 @@ void main() {
     expect(addMonths(DateTime(2026, 1, 31), 1), DateTime(2026, 2, 28));
     expect(addMonths(DateTime(2024, 1, 31), 1), DateTime(2024, 2, 29));
     expect(addMonths(DateTime(2026, 11, 15), -11), DateTime(2025, 12, 15));
+  })
+  test('progress to większa z części km i czasu', () {
+    // km: 5000/15000 = 0.33; czas: 292/365 dni = 0.8
+    final r = engine.evaluate(oil, now: now, currentOdometerKm: 105000);
+    expect(r.progress, closeTo(292 / 365, 1e-9));
+    // km: 13500/15000 = 0.9 > czas
+    final r2 = engine.evaluate(oil, now: now, currentOdometerKm: 113500);
+    expect(r2.progress, closeTo(0.9, 1e-9));
+    // po terminie przycięte do 1.0
+    final r3 = engine.evaluate(oil, now: now, currentOdometerKm: 130000);
+    expect(r3.progress, 1.0);
   });
 }

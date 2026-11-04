@@ -1,16 +1,19 @@
 name: fuellyo
 description: "FuellYo! – offline-first przypomnienia serwisowe i prognoza tankowania dla kierowców i flot."
 publish_to: "none"
-version: 0.1.0+1
+version: 0.2.0+2
 
 environment:
-  sdk: ">=3.4.0 <4.0.0"
-  flutter: ">=3.22.0"
+  sdk: ">=3.6.0 <4.0.0"
+  flutter: ">=3.27.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  intl: ^0.19.0
+  flutter_localizations:
+    sdk: flutter
+  # Wersję intl wyznacza flutter_localizations.
+  intl: any
 
 dev_dependencies:
   flutter_test:
@@ -19,3 +22,16 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope_400Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Manrope_500Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Manrope_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Manrope_700Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Manrope_800ExtraBold.ttf
+          weight: 800

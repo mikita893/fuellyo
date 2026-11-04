@@ -7,16 +7,21 @@
 - [x] Prognoza tankowania z historii
 - [x] Ekran główny na danych demo
 
-## 0.2 – Dane lokalne
+## 0.2 – Interfejs ✅
+- [x] Dolna nawigacja: Pulpit, Tankowania, Serwis, Garaż
+- [x] Pulpit: wskaźnik paliwa i prognoza, szybkie akcje, „wymaga uwagi”, statystyki miesiąca
+- [x] Formularz tankowania (do pełna / dolewka, cena, suma do zapłaty)
+- [x] Szczegóły zadania: oznaczanie jako wykonane, zmiana interwału, usuwanie
+- [x] Dodawanie zadań z szablonów i własnych
+- [x] Garaż: wiele pojazdów, dodawanie / edycja / usuwanie, przełączanie auta
+- [x] Ekran powitalny i tryb demo
+- [x] Ręczna aktualizacja licznika
+- [x] Własna czcionka (Manrope), jasny i ciemny motyw, polskie formaty dat i kwot
+
+## 0.3 – Dane lokalne
 - [ ] SQLite przez `drift` + migracje
 - [ ] Implementacja `GarageRepository` na bazie
-- [ ] Usunięcie danych demo, onboarding „dodaj pierwsze auto”
-
-## 0.3 – Wprowadzanie danych
-- [ ] Formularz tankowania (do pełna / dolewka, cena)
-- [ ] Oznaczanie czynności jako wykonanej (data + licznik)
-- [ ] Edycja interwałów i własne zadania
-- [ ] Ręczna aktualizacja licznika
+- [ ] Edycja istniejących tankowań
 
 ## 0.4 – Powiadomienia
 - [ ] Lokalne powiadomienia (`flutter_local_notifications`)
@@ -24,7 +29,7 @@
 - [ ] Ustawienia: rezerwa baku, progi „wkrótce”
 
 ## 0.5 – Floty i statystyki
-- [ ] Wiele pojazdów, widok floty dla firm
+- [ ] Widok floty dla firm (wszystkie auta naraz)
 - [ ] Statystyki kosztów i spalania
 - [ ] Eksport / import kopii zapasowej (plik), eksport CSV dla księgowości
 

@@ -36,13 +36,18 @@ flutter test
 flutter run
 ```
 
+Przy pierwszym uruchomieniu możesz dodać własne auto albo wybrać **„Zobacz na przykładowych danych”**.
+
 ## Struktura
 
 ```
 lib/
-  domain/        # logika biznesowa: przypomnienia, prognoza tankowania, przebieg
+  domain/        # logika biznesowa: przypomnienia, prognoza tankowania, przebieg, statystyki
   data/          # repozytoria (lokalny magazyn)
-  ui/            # ekrany Fluttera
+  app/           # stan aplikacji (GarageStore)
+  ui/            # ekrany, arkusze i widżety Fluttera
+assets/fonts/    # czcionka Manrope (OFL) – wbudowana, bez pobierania z sieci
 test/domain/     # testy jednostkowe logiki
+test/widget/     # testy przepływów w UI
 docs/            # architektura, prywatność, roadmapa
 ```
