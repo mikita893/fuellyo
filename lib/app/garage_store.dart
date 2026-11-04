@@ -9,6 +9,7 @@ class VehicleSnapshot {
     required this.vehicle,
     required this.fuelEntries,
     required this.tasks,
+    required this.repairs,
     required this.reminders,
     required this.prediction,
     required this.odometerKm,
@@ -22,6 +23,9 @@ class VehicleSnapshot {
   final List<FuelEntry> fuelEntries;
   final List<MaintenanceTask> tasks;
 
+  /// Historia napraw, od najnowszej.
+  final List<RepairEntry> repairs;
+
   /// Od najpilniejszego.
   final List<MaintenanceReminder> reminders;
   final RefuelPrediction? prediction;
@@ -29,8 +33,21 @@ class VehicleSnapshot {
   final double? dailyKm;
   final DateTime now;
 
-  List<MaintenanceReminder> get attention =>
-      reminders.where((r) => r.status != ReminderStatus.ok).toList();
+  List<MaintenanceReminder> get attention => Timeline.ending(reminders);
+
+  List<UpcomingEvent> get upcoming =>
+      Timeline.upcoming(now: now, prediction: prediction, reminders: reminders);
+
+  /// Koszty od początku roku: paliwo i naprawy.
+  ({double fuel, double repairs}) get yearCosts {
+    final from = DateTime(now.year);
+    final fuel = fuelEntries
+        .where((e) => !e.date.isBefore(from) && !e.date.isAfter(now))
+        .fold(0.0, (s, e) => s + (e.totalCost ?? 0));
+    return (fuel: fuel, repairs: RepairStats.costBetween(repairs, from, now));
+  }
+
+  List<RepairEntry> repairsForTask(String taskId) => repairs.where((r) => r.taskId == taskId).toList();
 
   /// Średnie spalanie z historii (bez spalania katalogowego), jeśli jest prognoza.
   double? get consumption => prediction?.consumptionLPer100Km;
@@ -80,9 +97,12 @@ class GarageStore extends ChangeNotifier {
         return byDate != 0 ? byDate : b.odometerKm.compareTo(a.odometerKm);
       });
     final tasks = await _repo.maintenanceTasks(v.id);
+    final repairs = RepairStats.sorted(await _repo.repairs(v.id));
     final readings = [
       ...fuel.map((e) => OdometerReading(e.date, e.odometerKm)),
       ...await _repo.odometerReadings(v.id),
+      for (final r in repairs)
+        if (r.odometerKm != null) OdometerReading(r.date, r.odometerKm!),
     ];
     final odometer = _mileage.estimateOdometer(readings, now);
     final daily = _mileage.averageDailyKm(readings);
@@ -90,6 +110,7 @@ class GarageStore extends ChangeNotifier {
       vehicle: v,
       fuelEntries: fuel,
       tasks: tasks,
+      repairs: repairs,
       reminders: _engine.evaluateAll(tasks, now: now, currentOdometerKm: odometer, dailyKm: daily),
       prediction: _predictor.predict(vehicle: v, entries: fuel, now: now),
       odometerKm: odometer,
@@ -152,6 +173,14 @@ class GarageStore extends ChangeNotifier {
     await load();
   }
 
+  Future<void> updateFuelEntry(FuelEntry old, FuelEntry updated) async {
+    final id = _selectedId;
+    if (id == null) return;
+    await _repo.deleteFuelEntry(id, old);
+    await _repo.addFuelEntry(id, updated);
+    await load();
+  }
+
   Future<void> deleteFuelEntry(FuelEntry entry) async {
     final id = _selectedId;
     if (id == null) return;
@@ -171,9 +200,49 @@ class GarageStore extends ChangeNotifier {
     await load();
   }
 
-  Future<void> markTaskDone(MaintenanceTask task, {required DateTime date, required int odometerKm}) async {
+  /// Zapisuje wykonanie zadania z planu i dodaje wpis do historii napraw.
+  Future<void> markTaskDone(
+    MaintenanceTask task, {
+    required DateTime date,
+    required int odometerKm,
+    String? place,
+    double? cost,
+    String? note,
+  }) async {
     await _repo.saveMaintenanceTask(task.markDone(date: dateOnly(date), odometerKm: odometerKm));
-    await _repo.addOdometerReading(task.vehicleId, OdometerReading(dateOnly(date), odometerKm));
+    await _repo.saveRepair(RepairEntry(
+      id: newId(),
+      vehicleId: task.vehicleId,
+      title: task.name,
+      category: task.kind == MaintenanceKind.inspection || task.kind == MaintenanceKind.insurance
+          ? RepairCategory.inspection
+          : RepairCategory.service,
+      date: dateOnly(date),
+      odometerKm: odometerKm,
+      place: place,
+      cost: cost,
+      note: note,
+      taskId: task.id,
+    ));
+    await load();
+  }
+
+  /// Zapisuje naprawę. Jeśli jest powiązana z zadaniem z planu, przesuwa też jego termin.
+  Future<void> saveRepair(RepairEntry repair) async {
+    await _repo.saveRepair(repair);
+    final taskId = repair.taskId;
+    final odo = repair.odometerKm;
+    if (taskId != null && odo != null) {
+      final task = _current?.tasks.where((t) => t.id == taskId).firstOrNull;
+      if (task != null && !repair.date.isBefore(task.lastDoneDate)) {
+        await _repo.saveMaintenanceTask(task.markDone(date: dateOnly(repair.date), odometerKm: odo));
+      }
+    }
+    await load();
+  }
+
+  Future<void> deleteRepair(RepairEntry repair) async {
+    await _repo.deleteRepair(repair.id);
     await load();
   }
 

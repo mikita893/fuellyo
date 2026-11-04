@@ -28,6 +28,8 @@ class Fmt {
         : DateFormat('d MMM yyyy', 'pl').format(d);
   }
 
+  static String shortDate(DateTime d) => DateFormat('d MMM yyyy', 'pl').format(d);
+
   static String fullDate(DateTime d) => DateFormat('d MMMM yyyy', 'pl').format(d);
 
   static String weekdayDate(DateTime d) => capitalize(DateFormat('EEEE, d MMMM', 'pl').format(d));

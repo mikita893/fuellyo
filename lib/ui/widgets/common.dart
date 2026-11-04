@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../domain/domain.dart';
+import '../format.dart';
 import '../theme.dart';
 
 /// Nagłówek sekcji z opcjonalną akcją po prawej.
@@ -207,4 +208,46 @@ class _GaugePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_GaugePainter old) => old.level != level || old.color != color || old.track != track;
+}
+
+/// Podpowiedzi pod polem tekstowym (np. ostatnie stacje czy warsztaty).
+class SuggestionChips extends StatelessWidget {
+  const SuggestionChips({super.key, required this.values, required this.onSelected});
+
+  final List<String> values;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    if (values.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          for (final v in values)
+            ActionChip(
+              avatar: const Icon(Icons.history, size: 16),
+              label: Text(v),
+              visualDensity: VisualDensity.compact,
+              onPressed: () => onSelected(v),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Krótki opis terminu zadania, np. „za 520 km · za 51 dni”.
+String reminderSummary(MaintenanceReminder r, DateTime now) {
+  final parts = <String>[];
+  if (r.kmLeft != null) {
+    parts.add(r.kmLeft! <= 0 ? '${Fmt.km(-r.kmLeft!)} po terminie' : 'za ${Fmt.km(r.kmLeft!)}');
+  }
+  if (r.nextDueDate != null) {
+    final days = daysBetween(now, r.nextDueDate!);
+    parts.add(days < 0 ? 'termin minął ${Fmt.date(r.nextDueDate!, now: now)}' : Fmt.relativeDays(days));
+  }
+  return parts.join(' · ');
 }

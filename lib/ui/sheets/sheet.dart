@@ -81,7 +81,7 @@ class DateField extends StatelessWidget {
           labelText: label,
           prefixIcon: const Icon(Icons.event_outlined),
         ),
-        child: Text(Fmt.fullDate(value)),
+        child: Text(Fmt.shortDate(value), maxLines: 1, overflow: TextOverflow.ellipsis),
       ),
     );
   }

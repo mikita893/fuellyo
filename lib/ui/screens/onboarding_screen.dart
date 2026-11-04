@@ -44,8 +44,8 @@ class OnboardingScreen extends StatelessWidget {
                   const SizedBox(height: 32),
                   const _Feature(
                     icon: Icons.notifications_active_outlined,
-                    title: 'Przypomnienia serwisowe',
-                    text: 'Olej, filtry, przegląd i OC – po kilometrach lub czasie.',
+                    title: 'Przeglądy i naprawy',
+                    text: 'Przypomnienia o oleju, filtrach, przeglądzie i OC oraz pełna historia napraw.',
                   ),
                   const _Feature(
                     icon: Icons.insights_rounded,

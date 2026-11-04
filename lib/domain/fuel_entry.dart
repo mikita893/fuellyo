@@ -5,7 +5,10 @@ class FuelEntry {
     required this.odometerKm,
     required this.liters,
     this.isFullTank = true,
+    this.missedPrevious = false,
     this.pricePerLiter,
+    this.station,
+    this.note,
   })  : assert(liters > 0),
         assert(odometerKm >= 0);
 
@@ -15,7 +18,15 @@ class FuelEntry {
 
   /// Czy zatankowano „do pełna”. Tylko odcinki pełny→pełny dają wiarygodne spalanie.
   final bool isFullTank;
+
+  /// Użytkownik pominął wpisanie poprzedniego tankowania – odcinek kończący się
+  /// tym wpisem nie nadaje się do liczenia spalania.
+  final bool missedPrevious;
   final double? pricePerLiter;
+
+  /// Gdzie tankowano (np. „Orlen, Puławska”).
+  final String? station;
+  final String? note;
 
   double? get totalCost => pricePerLiter == null ? null : pricePerLiter! * liters;
 }

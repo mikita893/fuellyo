@@ -131,6 +131,9 @@ class _FuelEntryTile extends StatelessWidget {
         ));
       },
       child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+        onTap: () => showFuelEntrySheet(context, entry: entry),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
@@ -160,6 +163,22 @@ class _FuelEntryTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
                     ),
+                    if (entry.station != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Row(
+                          children: [
+                            Icon(Icons.place_outlined, size: 14, color: scheme.onSurfaceVariant),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(entry.station!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -175,6 +194,7 @@ class _FuelEntryTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

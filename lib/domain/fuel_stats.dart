@@ -59,6 +59,32 @@ class FuelStats {
     );
   }
 
+  /// Ostatnie stacje (bez powtórzeń), od najnowszej – do podpowiedzi w formularzu.
+  static List<String> recentStations(List<FuelEntry> entries, {int limit = 5}) {
+    final sorted = [...entries]..sort((a, b) => b.date.compareTo(a.date));
+    final seen = <String>{};
+    for (final e in sorted) {
+      final s = e.station?.trim();
+      if (s != null && s.isNotEmpty) seen.add(s);
+      if (seen.length >= limit) break;
+    }
+    return seen.toList();
+  }
+
+  /// Uzupełnia brakującą wartość z trójki litry / cena za litr / kwota.
+  /// Gdy podane są co najmniej dwie, trzecia jest wyliczana. Zwraca `null`, gdy się nie da.
+  static ({double liters, double price, double total})? completeAmounts({
+    double? liters,
+    double? price,
+    double? total,
+  }) {
+    bool ok(double? v) => v != null && v > 0;
+    if (ok(liters) && ok(price)) return (liters: liters!, price: price!, total: liters * price);
+    if (ok(total) && ok(price)) return (liters: total! / price!, price: price, total: total);
+    if (ok(total) && ok(liters)) return (liters: liters!, price: total! / liters, total: total);
+    return null;
+  }
+
   /// Kilometry przejechane od poprzedniego tankowania (wg licznika) dla każdego wpisu.
   /// Pierwszy wpis w historii nie ma wartości.
   static Map<FuelEntry, int> distanceSincePrevious(List<FuelEntry> entries) {

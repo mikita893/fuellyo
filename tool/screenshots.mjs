@@ -51,34 +51,45 @@ async function shot(page, name) {
   console.log(`zapisano ${name}.png`);
 }
 
+const tab = { Start: 39, Tankowania: 117, Naprawy: 195, 'Przeglądy': 273, 'O aplikacji': 351 };
+const go = (p, name) => click(p, name, [tab[name], 805]);
+
 const page = await session('light');
 await shot(page, '01-powitanie');
 await click(page, 'Zobacz na przykładowych danych', [195, 607]);
-await shot(page, '02-pulpit');
+await shot(page, '02-start');
 await page.mouse.move(195, 400);
-await page.mouse.wheel(0, 700);
+await page.mouse.wheel(0, 650);
 await page.waitForTimeout(800);
-await shot(page, '03-pulpit-dol');
-await page.mouse.wheel(0, -2000);
-await page.waitForTimeout(500);
-await click(page, 'Tankowania', [146, 805]);
-await shot(page, '04-tankowania');
-await click(page, 'Serwis', [244, 805]);
-await shot(page, '05-serwis');
-await click(page, 'Garaż', [341, 805]);
-await shot(page, '06-garaz');
-await click(page, 'Tankowania', [146, 805]);
-await click(page, 'Tankowanie', [310, 725]);
-await shot(page, '07-nowe-tankowanie');
+await shot(page, '03-start-nadchodzi');
+await page.mouse.wheel(0, 900);
+await page.waitForTimeout(800);
+await shot(page, '04-start-koszty');
+await page.mouse.wheel(0, -3000);
+await go(page, 'Tankowania');
+await shot(page, '05-tankowania');
+await click(page, 'Tankowanie', [300, 725]);
+await shot(page, '06-formularz-tankowania');
 await page.keyboard.press('Escape');
 await page.waitForTimeout(800);
-await click(page, 'Serwis', [244, 805]);
+await go(page, 'Naprawy');
+await shot(page, '07-naprawy');
+await click(page, 'Naprawa', [300, 725]);
+await shot(page, '08-formularz-naprawy');
+await page.keyboard.press('Escape');
+await page.waitForTimeout(800);
+await go(page, 'Przeglądy');
+await shot(page, '09-przeglady');
 await click(page, 'Wymiana oleju', [195, 400]);
-await shot(page, '08-szczegoly-zadania');
+await shot(page, '10-szczegoly-przegladu');
+await page.keyboard.press('Escape');
+await page.waitForTimeout(800);
+await go(page, 'O aplikacji');
+await shot(page, '11-o-aplikacji');
 await page.close();
 
 const dark = await session('dark');
 await click(dark, 'Zobacz na przykładowych danych', [195, 607]);
-await shot(dark, '09-pulpit-ciemny');
+await shot(dark, '12-start-ciemny');
 
 await browser.close();

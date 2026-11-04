@@ -27,6 +27,9 @@ class _TaskSheetState extends State<TaskSheet> {
   final _form = GlobalKey<FormState>();
   late DateTime _doneDate;
   late final TextEditingController _doneKm;
+  final _donePlace = TextEditingController();
+  final _doneCost = TextEditingController();
+  final _doneNote = TextEditingController();
   late final TextEditingController _name;
   late final TextEditingController _intervalKm;
   late final TextEditingController _intervalMonths;
@@ -55,6 +58,9 @@ class _TaskSheetState extends State<TaskSheet> {
   @override
   void dispose() {
     _doneKm.dispose();
+    _donePlace.dispose();
+    _doneCost.dispose();
+    _doneNote.dispose();
     _name.dispose();
     _intervalKm.dispose();
     _intervalMonths.dispose();
@@ -63,11 +69,21 @@ class _TaskSheetState extends State<TaskSheet> {
 
   Future<void> _markDone() async {
     if (!_form.currentState!.validate()) return;
-    await GarageScope.read(context)
-        .markTaskDone(_task, date: _doneDate, odometerKm: int.parse(_doneKm.text));
+    final place = _donePlace.text.trim();
+    final note = _doneNote.text.trim();
+    await GarageScope.read(context).markTaskDone(
+      _task,
+      date: _doneDate,
+      odometerKm: int.parse(_doneKm.text),
+      place: place.isEmpty ? null : place,
+      cost: Fmt.parseDecimal(_doneCost.text),
+      note: note.isEmpty ? null : note,
+    );
     if (!mounted) return;
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${_task.name} – zapisano wykonanie')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${_task.name} – zapisano. Wpis dodany do napraw.')),
+    );
   }
 
   Future<void> _saveEdit() async {
@@ -181,6 +197,7 @@ class _TaskSheetState extends State<TaskSheet> {
           ),
         ),
       ),
+      ..._history(context, now),
       const SizedBox(height: 20),
       FilledButton.icon(
         onPressed: () => setState(() => _mode = _Mode.done),
@@ -202,6 +219,27 @@ class _TaskSheetState extends State<TaskSheet> {
     ];
   }
 
+  List<Widget> _history(BuildContext context, DateTime now) {
+    final history = GarageScope.read(context).current?.repairsForTask(_task.id) ?? const <RepairEntry>[];
+    if (history.isEmpty) return const [];
+    final scheme = Theme.of(context).colorScheme;
+    return [
+      const SectionHeader('Historia'),
+      for (final h in history.take(5))
+        ListTile(
+          dense: true,
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(Icons.check_circle_outline, color: scheme.primary),
+          title: Text(
+            [Fmt.date(h.date, now: now), if (h.odometerKm != null) Fmt.km(h.odometerKm!)].join(' · '),
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          subtitle: h.place == null ? null : Text(h.place!),
+          trailing: h.cost == null ? null : Text(Fmt.money(h.cost!)),
+        ),
+    ];
+  }
+
   List<Widget> _doneForm(BuildContext context) => [
         DateField(
           label: 'Kiedy wykonano',
@@ -220,6 +258,39 @@ class _TaskSheetState extends State<TaskSheet> {
             prefixIcon: Icon(Icons.speed_rounded),
           ),
           validator: (v) => (int.tryParse(v ?? '') ?? 0) <= 0 ? 'Podaj przebieg' : null,
+        ),
+        fieldGap,
+        TextFormField(
+          controller: _donePlace,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            labelText: 'Gdzie (warsztat / stacja kontroli)',
+            prefixIcon: Icon(Icons.place_outlined),
+          ),
+        ),
+        SuggestionChips(
+          values: RepairStats.recentPlaces(GarageScope.read(context).current?.repairs ?? const []),
+          onSelected: (v) => setState(() => _donePlace.text = v),
+        ),
+        fieldGap,
+        TextFormField(
+          controller: _doneCost,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: decimalOnly,
+          decoration: const InputDecoration(
+            labelText: 'Koszt (opcjonalnie)',
+            suffixText: 'zł',
+            prefixIcon: Icon(Icons.payments_outlined),
+          ),
+        ),
+        fieldGap,
+        TextFormField(
+          controller: _doneNote,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            labelText: 'Notatka (opcjonalnie)',
+            prefixIcon: Icon(Icons.notes_outlined),
+          ),
         ),
         const SizedBox(height: 20),
         FilledButton(onPressed: _markDone, child: const Text('Zapisz wykonanie')),

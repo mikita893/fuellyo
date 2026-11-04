@@ -18,17 +18,25 @@
 - [x] Ręczna aktualizacja licznika
 - [x] Własna czcionka (Manrope), jasny i ciemny motyw, polskie formaty dat i kwot
 
-## 0.3 – Dane lokalne
+## 0.3 – Układ w stylu Fuelio ✅
+- [x] Dolny pasek: Start, Tankowania, Naprawy, Przeglądy, O aplikacji
+- [x] Start: co się kończy, oś „Nadchodzi”, ostatnie wpisy, koszty w roku
+- [x] Formularz tankowania: dowolne 2 z 3 (litry / cena / kwota), stacja, notatka, „pominięte tankowanie”, edycja
+- [x] Naprawy: co, kategoria, kiedy, gdzie, przebieg, koszt, notatka, powiązanie z przeglądem
+- [x] Przeglądy: przy wykonaniu zapisujemy gdzie i za ile → wpis w historii napraw
+- [x] Podpowiedzi ostatnich stacji i warsztatów
+
+## 0.4 – Dane lokalne
 - [ ] SQLite przez `drift` + migracje
 - [ ] Implementacja `GarageRepository` na bazie
 - [ ] Edycja istniejących tankowań
 
-## 0.4 – Powiadomienia
+## 0.5 – Powiadomienia
 - [ ] Lokalne powiadomienia (`flutter_local_notifications`)
 - [ ] Przeliczanie w tle (WorkManager / BGTaskScheduler)
 - [ ] Ustawienia: rezerwa baku, progi „wkrótce”
 
-## 0.5 – Floty i statystyki
+## 0.6 – Floty i statystyki
 - [ ] Widok floty dla firm (wszystkie auta naraz)
 - [ ] Statystyki kosztów i spalania
 - [ ] Eksport / import kopii zapasowej (plik), eksport CSV dla księgowości

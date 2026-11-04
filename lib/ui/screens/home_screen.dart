@@ -1,27 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../app/garage_store.dart';
 import '../../domain/domain.dart';
 import '../format.dart';
 import '../sheets/fuel_entry_sheet.dart';
 import '../sheets/odometer_sheet.dart';
+import '../sheets/repair_sheet.dart';
 import '../sheets/task_sheet.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/vehicle_picker.dart';
 
-class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key, required this.onOpenService});
+/// Zakładka startowa: co się kończy, co nadchodzi, ostatnie wpisy i koszty.
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key, required this.onOpenTab});
 
-  final VoidCallback onOpenService;
+  /// Przełącza zakładkę (1 – tankowania, 2 – naprawy, 3 – przeglądy).
+  final ValueChanged<int> onOpenTab;
 
   @override
   Widget build(BuildContext context) {
-    final store = GarageScope.of(context);
-    final snap = store.current!;
+    final snap = GarageScope.of(context).current!;
     final scheme = Theme.of(context).colorScheme;
-    final recent = FuelStats.lastDays(snap.fuelEntries, snap.now, 30);
-    final attention = snap.attention;
+    final ending = snap.attention;
+    final upcoming = snap.upcoming.take(5).toList();
+    final costs = snap.yearCosts;
+    final lastFuel = snap.fuelEntries.firstOrNull;
+    final lastRepair = snap.repairs.firstOrNull;
 
     return SafeArea(
       bottom: false,
@@ -49,9 +55,9 @@ class DashboardScreen extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _QuickAction(
-                  icon: Icons.build_rounded,
-                  label: 'Serwis',
-                  onTap: onOpenService,
+                  icon: Icons.handyman_rounded,
+                  label: 'Naprawa',
+                  onTap: () => showRepairSheet(context),
                 ),
               ),
               const SizedBox(width: 10),
@@ -64,12 +70,10 @@ class DashboardScreen extends StatelessWidget {
               ),
             ],
           ),
-          SectionHeader(
-            'Wymaga uwagi',
-            actionLabel: 'Wszystkie',
-            onAction: onOpenService,
-          ),
-          if (attention.isEmpty)
+
+          // --- Co się kończy ---
+          SectionHeader('Kończy się', actionLabel: 'Przeglądy', onAction: () => onOpenTab(3)),
+          if (ending.isEmpty)
             Card(
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -78,52 +82,85 @@ class DashboardScreen extends StatelessWidget {
                   background: StatusColors.of(context, ReminderStatus.ok).background,
                   foreground: StatusColors.of(context, ReminderStatus.ok).foreground,
                 ),
-                title: const Text('Wszystko w porządku', style: TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text(_nextTaskText(snap)),
+                title: const Text('Nic się nie kończy', style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('Przeglądy, OC i wymiany są aktualne.'),
               ),
             )
           else
-            for (final r in attention.take(3))
+            for (final r in ending.take(4))
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: _AttentionTile(reminder: r, now: snap.now),
+                child: _EndingTile(reminder: r, now: snap.now),
               ),
-          const SectionHeader('Ostatnie 30 dni'),
-          Row(
-            children: [
-              Expanded(
-                child: StatTile(
-                  icon: Icons.payments_outlined,
-                  label: 'Wydatki na paliwo',
-                  value: Fmt.money(recent.cost),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: StatTile(
-                  icon: Icons.water_drop_outlined,
-                  label: 'Zatankowano (${recent.count}×)',
-                  value: Fmt.liters(recent.liters),
-                ),
-              ),
-            ],
+
+          // --- Co nadchodzi ---
+          const SectionHeader('Nadchodzi'),
+          Card(
+            child: upcoming.isEmpty
+                ? const ListTile(
+                    leading: Icon(Icons.event_available_outlined),
+                    title: Text('Brak zaplanowanych wydarzeń'),
+                    subtitle: Text('Dodaj tankowania i plan przeglądów, a pokażemy, co Cię czeka.'),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < upcoming.length; i++) ...[
+                          if (i > 0) const Divider(height: 1, indent: 76),
+                          _UpcomingRow(event: upcoming[i], now: snap.now),
+                        ],
+                      ],
+                    ),
+                  ),
           ),
-          const SizedBox(height: 10),
+
+          // --- Ostatnio ---
+          if (lastFuel != null || lastRepair != null) ...[
+            const SectionHeader('Ostatnio'),
+            if (lastFuel != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _RecentTile(
+                  icon: Icons.local_gas_station_rounded,
+                  title: '${Fmt.liters(lastFuel.liters)}'
+                      '${lastFuel.totalCost == null ? '' : ' · ${Fmt.money(lastFuel.totalCost!)}'}',
+                  subtitle: [Fmt.date(lastFuel.date, now: snap.now), lastFuel.station]
+                      .whereType<String>()
+                      .join(' · '),
+                  onTap: () => onOpenTab(1),
+                ),
+              ),
+            if (lastRepair != null)
+              _RecentTile(
+                icon: repairCategoryIcon(lastRepair.category),
+                title: lastRepair.title,
+                subtitle: [
+                  Fmt.date(lastRepair.date, now: snap.now),
+                  lastRepair.place,
+                  if (lastRepair.cost != null) Fmt.money(lastRepair.cost!),
+                ].whereType<String>().join(' · '),
+                onTap: () => onOpenTab(2),
+              ),
+          ],
+
+          // --- Koszty ---
+          SectionHeader('Koszty w ${snap.now.year}'),
           Row(
             children: [
               Expanded(
                 child: StatTile(
-                  icon: Icons.eco_outlined,
-                  label: 'Średnie spalanie',
-                  value: snap.consumption == null ? '–' : '${Fmt.decimal(snap.consumption!)} l',
+                  icon: Icons.local_gas_station_outlined,
+                  label: 'Paliwo',
+                  value: Fmt.money(costs.fuel),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: StatTile(
-                  icon: Icons.route_outlined,
-                  label: 'Dziennie średnio',
-                  value: snap.dailyKm == null ? '–' : Fmt.km(snap.dailyKm!),
+                  icon: Icons.handyman_outlined,
+                  label: 'Naprawy i serwis',
+                  value: Fmt.money(costs.repairs),
                 ),
               ),
             ],
@@ -131,12 +168,6 @@ class DashboardScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _nextTaskText(VehicleSnapshot snap) {
-    final next = snap.reminders.where((r) => r.estimatedDueDate != null).firstOrNull;
-    if (next == null) return 'Brak zaplanowanych czynności';
-    return 'Najbliżej: ${next.task.name.toLowerCase()} ${Fmt.relativeTo(next.estimatedDueDate!, snap.now)}';
   }
 }
 
@@ -185,7 +216,7 @@ class _FuelHeroCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('NASTĘPNE TANKOWANIE',
+                Text('PALIWO',
                     style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1)),
                 const SizedBox(height: 6),
                 Text(headline,
@@ -199,11 +230,7 @@ class _FuelHeroCard extends StatelessWidget {
                     runSpacing: 6,
                     children: [
                       _HeroPill('${Fmt.decimal(p.consumptionLPer100Km)} l/100 km'),
-                      _HeroPill(switch (p.confidence) {
-                        PredictionConfidence.high => 'pewna prognoza',
-                        PredictionConfidence.medium => 'dobra prognoza',
-                        PredictionConfidence.low => 'wstępna prognoza',
-                      }),
+                      if (snap.dailyKm != null) _HeroPill('${Fmt.km(snap.dailyKm!)}/dzień'),
                     ],
                   ),
                 ],
@@ -266,8 +293,8 @@ class _QuickAction extends StatelessWidget {
   }
 }
 
-class _AttentionTile extends StatelessWidget {
-  const _AttentionTile({required this.reminder, required this.now});
+class _EndingTile extends StatelessWidget {
+  const _EndingTile({required this.reminder, required this.now});
 
   final MaintenanceReminder reminder;
   final DateTime now;
@@ -311,15 +338,88 @@ class _AttentionTile extends StatelessWidget {
   }
 }
 
-/// Krótki opis terminu zadania, np. „za 520 km · 15 sty”.
-String reminderSummary(MaintenanceReminder r, DateTime now) {
-  final parts = <String>[];
-  if (r.kmLeft != null) {
-    parts.add(r.kmLeft! <= 0 ? '${Fmt.km(-r.kmLeft!)} po terminie' : 'za ${Fmt.km(r.kmLeft!)}');
+class _UpcomingRow extends StatelessWidget {
+  const _UpcomingRow({required this.event, required this.now});
+
+  final UpcomingEvent event;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isRefuel = event.kind == UpcomingKind.refuel;
+    final reminder = event.reminder;
+    return InkWell(
+      onTap: reminder == null ? null : () => showTaskSheet(context, reminder),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              decoration: BoxDecoration(
+                color: isRefuel ? scheme.primaryContainer : scheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Text('${event.date.day}',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, height: 1.1)),
+                  Text(DateFormat('MMM', 'pl').format(event.date),
+                      style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(event.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                  Text(
+                    Fmt.capitalize(Fmt.relativeTo(event.date, now)),
+                    style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              isRefuel ? Icons.local_gas_station_outlined : maintenanceIcon(reminder!.task.kind),
+              color: scheme.onSurfaceVariant,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
   }
-  if (r.nextDueDate != null) {
-    final days = daysBetween(now, r.nextDueDate!);
-    parts.add(days < 0 ? 'termin minął ${Fmt.date(r.nextDueDate!, now: now)}' : Fmt.relativeDays(days));
+}
+
+class _RecentTile extends StatelessWidget {
+  const _RecentTile({required this.icon, required this.title, required this.subtitle, required this.onTap});
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+        leading: IconBadge(icon, background: scheme.secondaryContainer, foreground: scheme.onSecondaryContainer),
+        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+        trailing: const Icon(Icons.chevron_right),
+      ),
+    );
   }
-  return parts.join(' · ');
 }

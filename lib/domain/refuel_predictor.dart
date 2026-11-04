@@ -28,7 +28,8 @@ class RefuelPrediction {
 /// Przewiduje, kiedy trzeba będzie zatankować – wyłącznie na podstawie lokalnej historii.
 ///
 /// Algorytm:
-/// 1. Spalanie = suma litrów / suma km na odcinkach „do pełna → do pełna”.
+/// 1. Spalanie = suma litrów / suma km na odcinkach „do pełna → do pełna”
+///    (z pominięciem odcinków z brakującym tankowaniem).
 /// 2. Stan baku po ostatnim tankowaniu „do pełna” odtwarzamy, uwzględniając
 ///    późniejsze dolewki.
 /// 3. Od ostatniego tankowania do dziś odejmujemy paliwo za szacowany przebieg
@@ -99,7 +100,11 @@ class RefuelPredictor {
       if (!sorted[i].isFullTank) continue;
       if (prevFullIdx != null) {
         final distance = sorted[i].odometerKm - sorted[prevFullIdx].odometerKm;
-        if (distance > 0) {
+        var gap = false;
+        for (var j = prevFullIdx + 1; j <= i; j++) {
+          if (sorted[j].missedPrevious) gap = true;
+        }
+        if (distance > 0 && !gap) {
           for (var j = prevFullIdx + 1; j <= i; j++) {
             liters += sorted[j].liters;
           }

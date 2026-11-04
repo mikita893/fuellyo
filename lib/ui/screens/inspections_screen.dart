@@ -7,16 +7,16 @@ import '../sheets/add_task_sheet.dart';
 import '../sheets/task_sheet.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
-import 'dashboard_screen.dart';
 
-class ServiceScreen extends StatefulWidget {
-  const ServiceScreen({super.key});
+/// Plan przeglądów i wymian: olej, filtry, przegląd techniczny, OC.
+class InspectionsScreen extends StatefulWidget {
+  const InspectionsScreen({super.key});
 
   @override
-  State<ServiceScreen> createState() => _ServiceScreenState();
+  State<InspectionsScreen> createState() => _InspectionsScreenState();
 }
 
-class _ServiceScreenState extends State<ServiceScreen> {
+class _InspectionsScreenState extends State<InspectionsScreen> {
   bool _onlyAttention = false;
 
   @override
@@ -29,7 +29,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('Serwis')),
+      appBar: AppBar(title: const Text('Przeglądy')),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: null,
         onPressed: () => showAddTaskSheet(context),
@@ -41,7 +41,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
               child: SingleChildScrollView(
                 child: EmptyState(
                   icon: Icons.build_rounded,
-                  title: 'Brak planu serwisowego',
+                  title: 'Brak planu przeglądów',
                   message: 'Dodaj czynności, o których mamy pamiętać: olej, filtry, przegląd, ubezpieczenie…',
                   actionLabel: 'Dodaj zadanie',
                   onAction: () => showAddTaskSheet(context),

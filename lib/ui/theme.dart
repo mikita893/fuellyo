@@ -118,3 +118,21 @@ String fuelTypeLabel(FuelType t) => switch (t) {
       FuelType.hybrid => 'Hybryda',
       FuelType.electric => 'Elektryczny',
     };
+
+String repairCategoryLabel(RepairCategory c) => switch (c) {
+      RepairCategory.repair => 'Naprawa',
+      RepairCategory.service => 'Serwis',
+      RepairCategory.inspection => 'Przegląd',
+      RepairCategory.tires => 'Opony',
+      RepairCategory.parts => 'Części',
+      RepairCategory.other => 'Inne',
+    };
+
+IconData repairCategoryIcon(RepairCategory c) => switch (c) {
+      RepairCategory.repair => Icons.handyman_outlined,
+      RepairCategory.service => Icons.build_circle_outlined,
+      RepairCategory.inspection => Icons.fact_check_outlined,
+      RepairCategory.tires => Icons.tire_repair,
+      RepairCategory.parts => Icons.settings_input_component_outlined,
+      RepairCategory.other => Icons.receipt_long_outlined,
+    };

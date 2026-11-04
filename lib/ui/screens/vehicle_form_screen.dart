@@ -171,7 +171,7 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
                       value: _defaultPlan,
                       onChanged: (v) => setState(() => _defaultPlan = v),
                       secondary: const Icon(Icons.checklist_rounded),
-                      title: const Text('Standardowy plan serwisowy'),
+                      title: const Text('Standardowy plan przeglądów'),
                       subtitle: const Text('Olej, filtry, płyn hamulcowy, przegląd, OC'),
                     ),
                 ],

@@ -7,6 +7,7 @@ abstract interface class GarageRepository {
   Future<List<FuelEntry>> fuelEntries(String vehicleId);
   Future<List<MaintenanceTask>> maintenanceTasks(String vehicleId);
   Future<List<OdometerReading>> odometerReadings(String vehicleId);
+  Future<List<RepairEntry>> repairs(String vehicleId);
 
   Future<void> saveVehicle(Vehicle vehicle);
   Future<void> deleteVehicle(String vehicleId);
@@ -15,6 +16,8 @@ abstract interface class GarageRepository {
   Future<void> saveMaintenanceTask(MaintenanceTask task);
   Future<void> deleteMaintenanceTask(String taskId);
   Future<void> addOdometerReading(String vehicleId, OdometerReading reading);
+  Future<void> saveRepair(RepairEntry repair);
+  Future<void> deleteRepair(String repairId);
 }
 
 /// Implementacja w pamięci – na start i do testów.
@@ -23,6 +26,7 @@ class InMemoryGarageRepository implements GarageRepository {
   final _fuel = <String, List<FuelEntry>>{};
   final _tasks = <String, MaintenanceTask>{};
   final _readings = <String, List<OdometerReading>>{};
+  final _repairs = <String, RepairEntry>{};
 
   @override
   Future<List<Vehicle>> vehicles() async => _vehicles.values.toList();
@@ -48,7 +52,18 @@ class InMemoryGarageRepository implements GarageRepository {
     _fuel.remove(vehicleId);
     _readings.remove(vehicleId);
     _tasks.removeWhere((_, t) => t.vehicleId == vehicleId);
+    _repairs.removeWhere((_, r) => r.vehicleId == vehicleId);
   }
+
+  @override
+  Future<List<RepairEntry>> repairs(String vehicleId) async =>
+      _repairs.values.where((r) => r.vehicleId == vehicleId).toList();
+
+  @override
+  Future<void> saveRepair(RepairEntry repair) async => _repairs[repair.id] = repair;
+
+  @override
+  Future<void> deleteRepair(String repairId) async => _repairs.remove(repairId);
 
   @override
   Future<void> addFuelEntry(String vehicleId, FuelEntry entry) async =>
@@ -93,6 +108,7 @@ Future<void> seedDemoData(GarageRepository repo, DateTime now) async {
 
   // Octavia: ~40 km dziennie, tankowanie do pełna co 2 tygodnie.
   const prices = [6.19, 6.25, 6.09, 6.29, 6.35, 6.29];
+  const stations = ['Orlen, Puławska 112', 'Shell, Al. Krakowska', 'Orlen, Puławska 112', 'BP, Wołoska', 'Circle K, Marynarska', 'Orlen, Puławska 112'];
   var odo = 118000;
   for (var i = 6; i >= 1; i--) {
     await repo.addFuelEntry(
@@ -102,6 +118,7 @@ Future<void> seedDemoData(GarageRepository repo, DateTime now) async {
         odometerKm: odo,
         liters: 30.8 + (i % 3) * 0.9,
         pricePerLiter: prices[6 - i],
+        station: stations[6 - i],
       ),
     );
     odo += 560;
@@ -112,9 +129,73 @@ Future<void> seedDemoData(GarageRepository repo, DateTime now) async {
   for (var i = 5; i >= 1; i--) {
     await repo.addFuelEntry(
       van.id,
-      FuelEntry(date: addDays(now, -(i * 5 + 1)), odometerKm: vanOdo, liters: 55, pricePerLiter: 6.29),
+      FuelEntry(
+        date: addDays(now, -(i * 5 + 1)),
+        odometerKm: vanOdo,
+        liters: 55,
+        pricePerLiter: 6.29,
+        station: 'Orlen, S8 Janki',
+      ),
     );
     vanOdo += 600;
+  }
+
+  final repairs = [
+    RepairEntry(
+      id: 'demo-r1',
+      vehicleId: car.id,
+      title: 'Wymiana klocków hamulcowych (przód)',
+      category: RepairCategory.repair,
+      date: addDays(now, -24),
+      odometerKm: 120400,
+      place: 'Auto-Serwis Kowalski',
+      cost: 480,
+      note: 'Tarcze do wymiany przy następnej okazji',
+    ),
+    RepairEntry(
+      id: 'demo-r2',
+      vehicleId: car.id,
+      title: 'Wymiana opon na zimowe',
+      category: RepairCategory.tires,
+      date: addDays(now, -9),
+      odometerKm: 121100,
+      place: 'Vulco Mokotów',
+      cost: 160,
+    ),
+    RepairEntry(
+      id: 'demo-r3',
+      vehicleId: car.id,
+      title: 'Wymiana akumulatora',
+      category: RepairCategory.parts,
+      date: addMonths(now, -5),
+      odometerKm: 114200,
+      place: 'Auto-Serwis Kowalski',
+      cost: 590,
+    ),
+    RepairEntry(
+      id: 'demo-r4',
+      vehicleId: car.id,
+      title: 'Wymiana oleju i filtra oleju',
+      category: RepairCategory.service,
+      date: addDays(addMonths(now, -10), -10),
+      odometerKm: 107000,
+      place: 'ASO Skoda Mokotów',
+      cost: 650,
+      taskId: '${car.id}-${MaintenanceKind.oilChange.name}',
+    ),
+    RepairEntry(
+      id: 'demo-r5',
+      vehicleId: van.id,
+      title: 'Naprawa sprzęgła',
+      category: RepairCategory.repair,
+      date: addDays(now, -40),
+      odometerKm: 62500,
+      place: 'Truck-Serwis Janki',
+      cost: 2850,
+    ),
+  ];
+  for (final r in repairs) {
+    await repo.saveRepair(r);
   }
 
   // Różne stany zadań, żeby było widać statusy.

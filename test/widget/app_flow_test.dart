@@ -40,8 +40,9 @@ void main() {
     expect(find.text('Witaj w FuellYo!'), findsOneWidget);
 
     await tapVisible(tester, find.text('Zobacz na przykładowych danych'));
-    expect(find.text('NASTĘPNE TANKOWANIE'), findsOneWidget);
-    expect(find.text('Wymaga uwagi'), findsOneWidget);
+    expect(find.text('PALIWO'), findsOneWidget);
+    expect(find.text('Kończy się'), findsOneWidget);
+    expect(find.text('Nadchodzi'), findsOneWidget);
   });
 
   testWidgets('dodanie pierwszego auta z formularza', (tester) async {
@@ -61,7 +62,7 @@ void main() {
 
   testWidgets('wszystkie zakładki renderują się bez błędów', (tester) async {
     await pumpApp(tester, demo: true);
-    for (final tab in ['Tankowania', 'Serwis', 'Garaż', 'Pulpit']) {
+    for (final tab in ['Tankowania', 'Naprawy', 'Przeglądy', 'O aplikacji', 'Start']) {
       await tester.tap(navItem(tab));
       await tester.pumpAndSettle();
     }
@@ -77,25 +78,57 @@ void main() {
     await tester.tap(find.widgetWithText(FloatingActionButton, 'Tankowanie'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.widgetWithText(TextFormField, 'Zatankowano'), '38,5');
+    // Cena jest podpowiedziana z ostatniego tankowania (6,29) – wpisujemy kwotę, litry liczą się same.
+    await tester.enterText(find.widgetWithText(TextFormField, 'Kwota'), '251,60');
     await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextFormField, '40,00'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextFormField, 'Stacja (opcjonalnie)'), 'Orlen, Puławska');
     await tapVisible(tester, find.text('Zapisz tankowanie'));
 
+    final saved = store.current!.fuelEntries.first;
     expect(store.current!.fuelEntries.length, before + 1);
-    expect(store.current!.fuelEntries.first.liters, 38.5);
+    expect(saved.liters, closeTo(40, 1e-9));
+    expect(saved.station, 'Orlen, Puławska');
   });
 
   testWidgets('oznaczenie zadania jako wykonane', (tester) async {
     final store = await pumpApp(tester, demo: true);
     final urgent = store.current!.attention.first;
 
-    await tester.tap(navItem('Serwis'));
+    final repairsBefore = store.current!.repairs.length;
+
+    await tester.tap(navItem('Przeglądy'));
     await tester.pumpAndSettle();
     await tapVisible(tester, find.text(urgent.task.name).first);
     await tapVisible(tester, find.text('Oznacz jako wykonane'));
+    await tester.enterText(find.widgetWithText(TextFormField, 'Koszt (opcjonalnie)'), '300');
     await tapVisible(tester, find.text('Zapisz wykonanie'));
 
     final after = store.current!.reminders.firstWhere((r) => r.task.id == urgent.task.id);
     expect(after.status, ReminderStatus.ok);
+    expect(store.current!.repairs.length, repairsBefore + 1);
+    expect(store.current!.repairs.first.cost, 300);
+  });
+
+  testWidgets('dodanie naprawy: co, gdzie, za ile', (tester) async {
+    final store = await pumpApp(tester, demo: true);
+    final before = store.current!.repairs.length;
+
+    await tester.tap(navItem('Naprawy'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FloatingActionButton, 'Naprawa'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextFormField, 'Co zrobiono'), 'Wymiana żarówki H7');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Gdzie (warsztat)'), 'Auto-Serwis Kowalski');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Koszt'), '45');
+    await tapVisible(tester, find.text('Zapisz naprawę'));
+
+    final saved = store.current!.repairs.first;
+    expect(store.current!.repairs.length, before + 1);
+    expect(saved.title, 'Wymiana żarówki H7');
+    expect(saved.place, 'Auto-Serwis Kowalski');
+    expect(saved.cost, 45);
+    expect(find.text('Wymiana żarówki H7'), findsOneWidget);
   });
 }
