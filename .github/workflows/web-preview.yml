@@ -1,12 +1,16 @@
 name: Web preview
 
-# Buduje wersję webową do podglądu UI (zrzuty ekranu w PR). Nie jest to wersja produkcyjna.
+# Buduje wersję webową i robi zrzuty ekranu do podglądu UI.
+# Zrzuty trafiają na gałąź `ui-previews` (folder = nazwa gałęzi źródłowej).
 on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  build-web:
+  screenshots:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,8 +23,31 @@ jobs:
           flutter create . --platforms web --org com.fuellyo --project-name fuellyo
           rm -f test/widget_test.dart
       - run: flutter build web --release --no-web-resources-cdn
-      - uses: actions/upload-artifact@v4
+      - uses: actions/setup-node@v4
         with:
-          name: web-preview
-          path: build/web
-          retention-days: 7
+          node-version: 20
+      - name: Take screenshots
+        run: |
+          npm install --no-save playwright@1
+          npx playwright install --with-deps chromium
+          python3 -m http.server 8080 --directory build/web >/dev/null 2>&1 &
+          sleep 2
+          node tool/screenshots.mjs http://localhost:8080 /tmp/screens
+      - name: Publish screenshots to ui-previews branch
+        env:
+          SRC_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          DIR="${SRC_BRANCH//\//-}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch origin ui-previews 2>/dev/null; then
+            git worktree add /tmp/previews origin/ui-previews
+            cd /tmp/previews && git checkout -B ui-previews
+          else
+            git worktree add --detach /tmp/previews
+            cd /tmp/previews && git checkout --orphan ui-previews && git rm -rfq .
+          fi
+          rm -rf "$DIR" && mkdir -p "$DIR" && cp /tmp/screens/*.png "$DIR/"
+          git add "$DIR"
+          git commit -qm "Zrzuty UI: $SRC_BRANCH @ ${GITHUB_SHA::7}" || echo "Brak zmian"
+          git push -f origin ui-previews
