@@ -1,3 +1,4 @@
+import 'date_utils.dart';
 import 'fuel_entry.dart';
 
 /// Podsumowanie tankowań w jednym miesiącu kalendarzowym.
@@ -46,6 +47,17 @@ class FuelStats {
         month: day.month,
         entries: entries.where((e) => e.date.year == day.year && e.date.month == day.month).toList(),
       );
+
+  /// Podsumowanie ostatnich [days] dni (łącznie z dniem [now]).
+  static ({int count, double liters, double cost}) lastDays(List<FuelEntry> entries, DateTime now, int days) {
+    final from = addDays(now, -(days - 1));
+    final inRange = entries.where((e) => !dateOnly(e.date).isBefore(from) && !dateOnly(e.date).isAfter(dateOnly(now)));
+    return (
+      count: inRange.length,
+      liters: inRange.fold(0.0, (sum, e) => sum + e.liters),
+      cost: inRange.fold(0.0, (sum, e) => sum + (e.totalCost ?? 0)),
+    );
+  }
 
   /// Kilometry przejechane od poprzedniego tankowania (wg licznika) dla każdego wpisu.
   /// Pierwszy wpis w historii nie ma wartości.

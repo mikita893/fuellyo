@@ -20,7 +20,7 @@ class DashboardScreen extends StatelessWidget {
     final store = GarageScope.of(context);
     final snap = store.current!;
     final scheme = Theme.of(context).colorScheme;
-    final month = FuelStats.forMonth(snap.fuelEntries, snap.now);
+    final recent = FuelStats.lastDays(snap.fuelEntries, snap.now, 30);
     final attention = snap.attention;
 
     return SafeArea(
@@ -88,22 +88,22 @@ class DashboardScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: _AttentionTile(reminder: r, now: snap.now),
               ),
-          const SectionHeader('Ten miesiąc'),
+          const SectionHeader('Ostatnie 30 dni'),
           Row(
             children: [
               Expanded(
                 child: StatTile(
                   icon: Icons.payments_outlined,
                   label: 'Wydatki na paliwo',
-                  value: Fmt.money(month.cost),
+                  value: Fmt.money(recent.cost),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: StatTile(
                   icon: Icons.water_drop_outlined,
-                  label: '${month.entries.length} × tankowanie',
-                  value: Fmt.liters(month.liters),
+                  label: 'Zatankowano (${recent.count}×)',
+                  value: Fmt.liters(recent.liters),
                 ),
               ),
             ],
@@ -295,7 +295,7 @@ class _AttentionTile extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 2),
                     Text(reminderSummary(reminder, now),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                   ],

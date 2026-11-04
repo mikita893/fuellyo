@@ -29,4 +29,14 @@ void main() {
     expect(d[b], 500);
     expect(d[c], 600);
   });
+
+  test('podsumowanie ostatnich dni', () {
+    final sum = FuelStats.lastDays([a, b, c], DateTime(2026, 11, 3), 30);
+    // okno 30 dni: od 5 paź do 3 lis włącznie
+    expect(sum.count, 3);
+    final week = FuelStats.lastDays([a, b, c], DateTime(2026, 11, 3), 7);
+    expect(week.count, 1);
+    expect(week.liters, 35);
+    expect(week.cost, 0);
+  });
 }

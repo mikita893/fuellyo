@@ -73,7 +73,7 @@ await shot(page, '07-nowe-tankowanie');
 await page.keyboard.press('Escape');
 await page.waitForTimeout(800);
 await click(page, 'Serwis', [244, 805]);
-await click(page, 'Wymiana oleju', [195, 330]);
+await click(page, 'Wymiana oleju', [195, 400]);
 await shot(page, '08-szczegoly-zadania');
 await page.close();
 

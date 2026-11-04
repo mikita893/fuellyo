@@ -105,7 +105,7 @@ class _FuelEntrySheetState extends State<FuelEntrySheet> {
             inputFormatters: decimalOnly,
             decoration: const InputDecoration(
               labelText: 'Zatankowano',
-              suffixText: 'l',
+              suffixText: 'litrów',
               prefixIcon: Icon(Icons.water_drop_outlined),
             ),
             validator: (v) {
