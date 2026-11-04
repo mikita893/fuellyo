@@ -42,6 +42,7 @@ void main() {
     await tapVisible(tester, find.text('Zobacz na przykładowych danych'));
     expect(find.text('PALIWO'), findsOneWidget);
     expect(find.text('Kończy się'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Nadchodzi'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.text('Nadchodzi'), findsOneWidget);
   });
 
